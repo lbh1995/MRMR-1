@@ -3,6 +3,10 @@ from sklearn.model_selection import train_test_split
 from scipy.stats.stats import pearsonr
 from sklearn import svm
 from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import matthews_corrcoef
+from sklearn.svm import SVC
 def loadData(dataFileName):
 	inputMatrix = np.loadtxt(open(dataFileName,'rb'), delimiter=",", skiprows=1)  
 	return inputMatrix
@@ -71,6 +75,13 @@ def judgeBadFeature(feature):
 		judgeArray[i] = meanValue 
 	return (feature==judgeArray).all()
 
+def evaluate_binary_predictions(true_y, pred_scores):
+    auc = roc_auc_score(true_y, pred_scores)
+    acc = accuracy_score(true_y, pred_scores)  # using default cutoff of 0.5
+    mcc = matthews_corrcoef(true_y, pred_scores)
+    return auc, mcc, acc
+    
+
 #report warning when all of the one feature is 0 
 def FCDMethodOnI(featureIdxi, X_train, trainFStatis, seletedFeature):
 	featureSelectedi = selectOneFeature(featureIdxi, X_train)
@@ -123,7 +134,7 @@ def FCQmethodFindFeature(omegaFeature, X_train, trainFStatis, seletedFeature):
 #toSelectNum is the hyper parameter to choose the number of selection
 #methodPara = 1 choose FCD method
 #methodPara = 2 choose FCQ method
-def MRMRmethod(toSelectNum, methodPara):
+def MRMRmethod(toSelectNum, methodPara, seletedFeature):
 	firstFeature = findFirstFeature(trainFStatis)
 	seletedFeature.add(firstFeature)
 	#omegaFeature are the unseleted feature set
@@ -137,15 +148,34 @@ def MRMRmethod(toSelectNum, methodPara):
 			nextFeature = FCDmethodFindFeature(omegaFeature, X_train, trainFStatis, seletedFeature)
 		elif methodPara == 2:
 			nextFeature = FCQmethodFindFeature(omegaFeature, X_train, trainFStatis, seletedFeature)
-		print seletedFeature
+#		print seletedFeature
 	return seletedFeature
 
 def crossValidation(featureArray, labelArray, test_size):
 	X_train, X_test, y_train, y_test = train_test_split(featureArray, labelArray, test_size=0.2, random_state=42)
 	return X_train, X_test, y_train, y_test
 
+def selectAndTrain(toSelectNum, selectMethod):
+	seletedFeature = set()
+	methodSelectedFeature = MRMRmethod(toSelectNum, selectMethod, seletedFeature)
+	listMethodSelectedFeature = list(methodSelectedFeature)
+	SVMmodel = SVC()
+	SVMmodel.fit(X_train[:, listMethodSelectedFeature], y_train)
+	y_Pred = SVMmodel.predict(X_test[:, listMethodSelectedFeature])
+	score = evaluate_binary_predictions(y_test,y_Pred)
+	outputTest.write("toSelectNum = %d, selectMethod = %d, selectedAUC = %f, selectedMCC = %f, selectedACC = %f\n"%(toSelectNum, selectMethod, score[0], score[1], score[2]))
+	return 0
+
+def withoutMRMR(X_train, y_train, X_test, y_test):
+	SVMmodel = SVC()
+	SVMmodel.fit(X_train, y_train)
+	y_Pred = SVMmodel.predict(X_test)
+	score = evaluate_binary_predictions(y_test,y_Pred)
+	outputTest.write("toSelectNum = 0, selectMethod = 0, selectedAUC = %f, selectedMCC = %f, selectedACC = %f\n"%(score[0], score[1], score[2]))
+	return 0
+
 crossValRatio = 0.2
-toSelectNum = 30
+toSelectNum = 50
 selectMethod = 1
 #load the data, get the features and label
 dataFileName = "data/data.csv"
@@ -158,18 +188,49 @@ posIdx, negIdx = getPosNegIdx(y_train)
 #f(i, h) = featureSelectedi, c(i,j) = PCCij
 #print getfStatis(featureIdxi, X_train, posIdx, negIdx)
 #print PCCij
-#outputTest = open("outputTest.txt", "w")
+outputTest = open("outputTest.txt", "w")
 #featureSelectedi = selectOneFeature(featureIdxi, X_train)
+withoutMRMR(X_train, y_train, X_test, y_test)
+trainFStatis = np.zeros(featureTrainNum)
+setUniversalSet = {x for x in range(featureTrainNum)}
+trainFStatis = getTrainFStatis(featureTrainNum, X_train, posIdx, negIdx)
+print sampleTrainNum
+#testParaNum = range(50, sampleTrainNum, 50)
+testParaNum = range(20, sampleTrainNum, 10)
+#testParaNum = range(1, 3, 1)
+testMethodNum = range(1,3)
+for j in testMethodNum:
+	for i in testParaNum:
+		print i
+		selectAndTrain(i, j)
+
+
+
+
+
+
+
+#outputTest.write("toSelectNum = %d, selectMethod = %d, selectedAUC = %f, selectedMCC = %f, selectedACC = %f\n"%(toSelectNum, selectMethod, score[0], score[1], score[2]))
+#print("selectedAUC:", score[0])
+#print("selectedMCC:", score[1])
+#print("selectedACC:", score[2])
+'''
 trainFStatis = np.zeros(featureTrainNum)
 seletedFeature = set()
 setUniversalSet = {x for x in range(featureTrainNum)}
 trainFStatis = getTrainFStatis(featureTrainNum, X_train, posIdx, negIdx)
 methodSelectedFeature = MRMRmethod(toSelectNum, selectMethod)
-
-gnb = GaussianNB()
-
-
-
-
-
+listMethodSelectedFeature = list(methodSelectedFeature)
+SVMmodel = SVC()
+SVMmodel.fit(X_train[:, listMethodSelectedFeature], y_train)
+y_Pred = SVMmodel.predict(X_test[:, listMethodSelectedFeature])
+score = evaluate_binary_predictions(y_test,y_Pred)
+SVMmodelOri = SVC()
+SVMmodelOri.fit(X_train, y_train)
+y_PredOri = SVMmodelOri.predict(X_test)
+scoreOri = evaluate_binary_predictions(y_test,y_PredOri)
+print("AUC:", scoreOri[0])
+print("MCC:", scoreOri[1])
+print("ACC:", scoreOri[2])
+'''
 
