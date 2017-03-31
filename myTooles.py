@@ -25,8 +25,10 @@ def getPosNegIdx(label):
 	return posIdx, negIdx
 
 def selectOneFeature(featureIndex, featureSpace):
+#	print featureIndex
 	return featureSpace[:,featureIndex]
 
+#compute the F-static on featureIdx
 def getfStatis(featureIdx, X_train, posIdx, negIdx):
 	featureSelectedi = selectOneFeature(featureIdx, X_train)
 	nPos = len(posIdx)
@@ -58,28 +60,91 @@ def getTrainFStatis(featureTrainNum, X_train, posIdx, negIdx):
 		trainFStatis[i] = getfStatis(i, X_train, posIdx, negIdx)
 	return trainFStatis
 
+#judege the feature, if all the element in one feature is the same, it will return 1
+#bad feature means all the element in the feature are the same
+def judgeBadFeature(feature):
+	meanValue = np.mean(feature)
+#	print meanValue
+	judgeArray = np.zeros(len(feature))
+	for i in range(len(feature)):
+		judgeArray[i] = meanValue 
+	return (feature==judgeArray).all()
+
+#report warning when all of the one feature is 0 
 def FCDMethodOnI(featureIdxi, X_train, trainFStatis, seletedFeature):
 	featureSelectedi = selectOneFeature(featureIdxi, X_train)
 	numSeletedFeature = len(seletedFeature)
 	sumAllPCC = 0
-	for featureIdxj in seletedFeature:
-		sumAllPCC += abs(pearsonr(selectOneFeature(featureIdxi, X_train), selectOneFeature(featureIdxj, X_train))[0])
-	sumAllPCC = sumAllPCC/numSeletedFeature
+	if (judgeBadFeature(selectOneFeature(featureIdxi, X_train)) == 1):
+		return -1
+	else:
+		for featureIdxj in seletedFeature:
+			sumAllPCC += abs(pearsonr(selectOneFeature(featureIdxi, X_train), selectOneFeature(featureIdxj, X_train))[0])
+#		print pearsonr(selectOneFeature(featureIdxi, X_train), selectOneFeature(featureIdxj, X_train))
+		sumAllPCC = sumAllPCC/numSeletedFeature
 	return trainFStatis[featureIdxi]-sumAllPCC
 
 def FCQMethodOnI(featureIdxi, X_train, trainFStatis, seletedFeature):
+#	print featureIdxi
+#	print seletedFeature
 	featureSelectedi = selectOneFeature(featureIdxi, X_train)
 	numSeletedFeature = len(seletedFeature)
 	sumAllPCC = 0
-	for featureIdxj in seletedFeature:
-		sumAllPCC += abs(pearsonr(selectOneFeature(featureIdxi, X_train), selectOneFeature(featureIdxj, X_train))[0])
-	sumAllPCC = sumAllPCC/numSeletedFeature
+	if (judgeBadFeature(selectOneFeature(featureIdxi, X_train)) == 1):
+		return -1
+	else:
+		for featureIdxj in seletedFeature:
+			sumAllPCC += abs(pearsonr(selectOneFeature(featureIdxi, X_train), selectOneFeature(featureIdxj, X_train))[0])
+		sumAllPCC = sumAllPCC/numSeletedFeature
 	return trainFStatis[featureIdxi]/sumAllPCC
+
+#use FCD method to find the next feature
+#FCDSelectFeature [1 2 3]
+#the selected feature is FCDSelectFeature.argmax
+def FCDmethodFindFeature(omegaFeature, X_train, trainFStatis, seletedFeature):
+	FCDSelectFeature = np.zeros(len(omegaFeature)+len(seletedFeature))
+	for featureInOmega in omegaFeature:
+#		print featureInOmega
+		FCDSelectFeature[featureInOmega] = FCDMethodOnI(featureInOmega, X_train, trainFStatis, seletedFeature)
+#	outputTest.write("%f"%(FCDSelectFeature))
+	np.savetxt("testOut.txt",FCDSelectFeature, fmt="%f",delimiter=",")
+	return FCDSelectFeature.argmax()
+
+def FCQmethodFindFeature(omegaFeature, X_train, trainFStatis, seletedFeature):
+	FCQSelectFeature = np.zeros(len(omegaFeature)+len(seletedFeature))
+	for featureInOmega in omegaFeature:
+#		print featureInOmega
+		FCQSelectFeature[featureInOmega] = FCQMethodOnI(featureInOmega, X_train, trainFStatis, seletedFeature)
+#	outputTest.write("%f"%(FCQSelectFeature))
+	np.savetxt("testOut.txt",FCQSelectFeature, fmt="%f",delimiter=",")
+	return FCQSelectFeature.argmax()
+
+#toSelectNum is the hyper parameter to choose the number of selection
+#methodPara = 1 choose FCD method
+#methodPara = 2 choose FCQ method
+def MRMRmethod(toSelectNum, methodPara):
+	firstFeature = findFirstFeature(trainFStatis)
+	seletedFeature.add(firstFeature)
+	#omegaFeature are the unseleted feature set
+	omegaFeature = setUniversalSet-seletedFeature
+	nextFeature = FCDmethodFindFeature(omegaFeature, X_train, trainFStatis, seletedFeature)
+	for i in range(0, toSelectNum):
+		seletedFeature.add(nextFeature)
+#		print seletedFeature
+		omegaFeature = setUniversalSet-seletedFeature
+		if methodPara == 1:
+			nextFeature = FCDmethodFindFeature(omegaFeature, X_train, trainFStatis, seletedFeature)
+		elif methodPara == 2:
+			nextFeature = FCQmethodFindFeature(omegaFeature, X_train, trainFStatis, seletedFeature)
+		print seletedFeature
+	return seletedFeature
 
 def crossValidation(featureArray, labelArray, test_size):
 	X_train, X_test, y_train, y_test = train_test_split(featureArray, labelArray, test_size=0.2, random_state=42)
 	return X_train, X_test, y_train, y_test
 crossValRatio = 0.2
+toSelectNum = 30
+selectMethod = 1
 #load the data, get the features and label
 dataFileName = "data/data.csv"
 inputMatrix = loadData(dataFileName)
@@ -88,8 +153,6 @@ labelArray, featureArray = preProcessing(inputMatrix)
 X_train, X_test, y_train, y_test = crossValidation(featureArray, labelArray, crossValRatio)
 sampleTrainNum, featureTrainNum = X_train.shape
 posIdx, negIdx = getPosNegIdx(y_train)
-featureIdxi = 1
-featureIdxj = 1
 #f(i, h) = featureSelectedi, c(i,j) = PCCij
 #print getfStatis(featureIdxi, X_train, posIdx, negIdx)
 #print PCCij
@@ -100,10 +163,8 @@ trainFStatis = np.zeros(featureTrainNum)
 seletedFeature = set()
 setUniversalSet = {x for x in range(featureTrainNum)}
 trainFStatis = getTrainFStatis(featureTrainNum, X_train, posIdx, negIdx)
-findMaxFeature = findFirstFeature(trainFStatis)
-seletedFeature.add(findMaxFeature)
-print FCDMethodOnI(1, X_train, trainFStatis, seletedFeature)
+methodSelectedFeature = MRMRmethod(toSelectNum, selectMethod)
 
-print FCQMethodOnI(1, X_train, trainFStatis, seletedFeature)
+
 
 
