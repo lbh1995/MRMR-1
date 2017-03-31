@@ -51,13 +51,34 @@ def getfStatis(featureIdx, X_train, posIdx, negIdx):
 
 def findFirstFeature(trainFStatis):
 	#just use the maxF-statis as the first feature
-#	return trainFStatis.max(), trainFStatis.argmax() 
 	return trainFStatis.argmax()
+
+def getTrainFStatis(featureTrainNum, X_train, posIdx, negIdx):
+	for i in range(0, featureTrainNum):
+		trainFStatis[i] = getfStatis(i, X_train, posIdx, negIdx)
+	return trainFStatis
+
+def FCDMethodOnI(featureIdxi, X_train, trainFStatis, seletedFeature):
+	featureSelectedi = selectOneFeature(featureIdxi, X_train)
+	numSeletedFeature = len(seletedFeature)
+	sumAllPCC = 0
+	for featureIdxj in seletedFeature:
+		sumAllPCC += abs(pearsonr(selectOneFeature(featureIdxi, X_train), selectOneFeature(featureIdxj, X_train))[0])
+	sumAllPCC = sumAllPCC/numSeletedFeature
+	return trainFStatis[featureIdxi]-sumAllPCC
+
+def FCQMethodOnI(featureIdxi, X_train, trainFStatis, seletedFeature):
+	featureSelectedi = selectOneFeature(featureIdxi, X_train)
+	numSeletedFeature = len(seletedFeature)
+	sumAllPCC = 0
+	for featureIdxj in seletedFeature:
+		sumAllPCC += abs(pearsonr(selectOneFeature(featureIdxi, X_train), selectOneFeature(featureIdxj, X_train))[0])
+	sumAllPCC = sumAllPCC/numSeletedFeature
+	return trainFStatis[featureIdxi]/sumAllPCC
 
 def crossValidation(featureArray, labelArray, test_size):
 	X_train, X_test, y_train, y_test = train_test_split(featureArray, labelArray, test_size=0.2, random_state=42)
 	return X_train, X_test, y_train, y_test
-	w
 crossValRatio = 0.2
 #load the data, get the features and label
 dataFileName = "data/data.csv"
@@ -76,19 +97,13 @@ featureSelectedi = selectOneFeature(featureIdxi, X_train)
 PCCij = pearsonr(selectOneFeature(featureIdxi, X_train), selectOneFeature(featureIdxj, X_train))[0]
 outputTest = open("outputTest.txt", "w")
 trainFStatis = np.zeros(featureTrainNum)
-for i in range(0, featureTrainNum):
-	trainFStatis[i] = getfStatis(i, X_train, posIdx, negIdx)
-
 seletedFeature = set()
-setUniversalSet =  { x for x in range(featureTrainNum) }
-
+setUniversalSet = {x for x in range(featureTrainNum)}
+trainFStatis = getTrainFStatis(featureTrainNum, X_train, posIdx, negIdx)
 findMaxFeature = findFirstFeature(trainFStatis)
+seletedFeature.add(findMaxFeature)
+print FCDMethodOnI(1, X_train, trainFStatis, seletedFeature)
 
-seletedFeature = seletedFeature.add(findMaxFeature)
-
-
-#trainFStatis.append(
-#print trainFStatis
-#print max(trainFStatis)
+print FCQMethodOnI(1, X_train, trainFStatis, seletedFeature)
 
 
