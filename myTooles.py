@@ -49,9 +49,15 @@ def getfStatis(featureIdx, X_train, posIdx, negIdx):
 #	print fStatis
 	return fStatis
 
+def findFirstFeature(trainFStatis):
+	#just use the maxF-statis as the first feature
+#	return trainFStatis.max(), trainFStatis.argmax() 
+	return trainFStatis.argmax()
+
 def crossValidation(featureArray, labelArray, test_size):
 	X_train, X_test, y_train, y_test = train_test_split(featureArray, labelArray, test_size=0.2, random_state=42)
 	return X_train, X_test, y_train, y_test
+	w
 crossValRatio = 0.2
 #load the data, get the features and label
 dataFileName = "data/data.csv"
@@ -72,7 +78,17 @@ outputTest = open("outputTest.txt", "w")
 trainFStatis = np.zeros(featureTrainNum)
 for i in range(0, featureTrainNum):
 	trainFStatis[i] = getfStatis(i, X_train, posIdx, negIdx)
+
+seletedFeature = set()
+setUniversalSet =  { x for x in range(featureTrainNum) }
+
+findMaxFeature = findFirstFeature(trainFStatis)
+
+seletedFeature = seletedFeature.add(findMaxFeature)
+
+
 #trainFStatis.append(
-print trainFStatis
+#print trainFStatis
+#print max(trainFStatis)
 
 
