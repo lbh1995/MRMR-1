@@ -41,7 +41,11 @@ def getfStatis(featureIdx, X_train, posIdx, negIdx):
 	gMean = np.mean(featureSelectedi)
 	gPosMean = np.mean(featureSelectedi[posIdx])
 	gNegMean = np.mean(featureSelectedi[negIdx])
-	fStatis = [nPosArray*(gPosMean-gMean)*(gPosMean-gMean)+nNegArray*(gNegMean-gMean)*(gNegMean-gMean)]/(sigmaSQ)
+	outputTest.write("gPosMean = %f, gMean = %f, gNegMean = %f, sigmaSQ = %f\n"% (gPosMean, gMean, gNegMean, sigmaSQ))
+	if sigmaSQ == 0:
+		fStatis = 0
+	else:
+		fStatis = [nPosArray*(gPosMean-gMean)*(gPosMean-gMean)+nNegArray*(gNegMean-gMean)*(gNegMean-gMean)]/(sigmaSQ)
 #	print fStatis
 	return fStatis
 
@@ -64,9 +68,11 @@ featureIdxj = 1
 #print PCCij
 featureSelectedi = selectOneFeature(featureIdxi, X_train)
 PCCij = pearsonr(selectOneFeature(featureIdxi, X_train), selectOneFeature(featureIdxj, X_train))[0]
-trainFStatis = []
-for i in range(0, len(featureTrainNum)):
-	trainFStatis = trainFStatis.append(getfStatis(i, X_train, posIdx, negIdx
+outputTest = open("outputTest.txt", "w")
+trainFStatis = np.zeros(featureTrainNum)
+for i in range(0, featureTrainNum):
+	trainFStatis[i] = getfStatis(i, X_train, posIdx, negIdx)
+#trainFStatis.append(
 print trainFStatis
 
 
