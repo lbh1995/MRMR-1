@@ -64,4 +64,9 @@ featureIdxj = 1
 #print PCCij
 featureSelectedi = selectOneFeature(featureIdxi, X_train)
 PCCij = pearsonr(selectOneFeature(featureIdxi, X_train), selectOneFeature(featureIdxj, X_train))[0]
+trainFStatis = []
+for i in range(0, len(featureTrainNum)):
+	trainFStatis = trainFStatis.append(getfStatis(i, X_train, posIdx, negIdx
+print trainFStatis
+
 
