@@ -1,7 +1,8 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
 from scipy.stats.stats import pearsonr
-
+from sklearn import svm
+from sklearn.naive_bayes import GaussianNB
 def loadData(dataFileName):
 	inputMatrix = np.loadtxt(open(dataFileName,'rb'), delimiter=",", skiprows=1)  
 	return inputMatrix
@@ -43,7 +44,7 @@ def getfStatis(featureIdx, X_train, posIdx, negIdx):
 	gMean = np.mean(featureSelectedi)
 	gPosMean = np.mean(featureSelectedi[posIdx])
 	gNegMean = np.mean(featureSelectedi[negIdx])
-	outputTest.write("gPosMean = %f, gMean = %f, gNegMean = %f, sigmaSQ = %f\n"% (gPosMean, gMean, gNegMean, sigmaSQ))
+#	outputTest.write("gPosMean = %f, gMean = %f, gNegMean = %f, sigmaSQ = %f\n"% (gPosMean, gMean, gNegMean, sigmaSQ))
 	if sigmaSQ == 0:
 		fStatis = 0
 	else:
@@ -142,6 +143,7 @@ def MRMRmethod(toSelectNum, methodPara):
 def crossValidation(featureArray, labelArray, test_size):
 	X_train, X_test, y_train, y_test = train_test_split(featureArray, labelArray, test_size=0.2, random_state=42)
 	return X_train, X_test, y_train, y_test
+
 crossValRatio = 0.2
 toSelectNum = 30
 selectMethod = 1
@@ -156,14 +158,17 @@ posIdx, negIdx = getPosNegIdx(y_train)
 #f(i, h) = featureSelectedi, c(i,j) = PCCij
 #print getfStatis(featureIdxi, X_train, posIdx, negIdx)
 #print PCCij
-featureSelectedi = selectOneFeature(featureIdxi, X_train)
-PCCij = pearsonr(selectOneFeature(featureIdxi, X_train), selectOneFeature(featureIdxj, X_train))[0]
-outputTest = open("outputTest.txt", "w")
+#outputTest = open("outputTest.txt", "w")
+#featureSelectedi = selectOneFeature(featureIdxi, X_train)
 trainFStatis = np.zeros(featureTrainNum)
 seletedFeature = set()
 setUniversalSet = {x for x in range(featureTrainNum)}
 trainFStatis = getTrainFStatis(featureTrainNum, X_train, posIdx, negIdx)
 methodSelectedFeature = MRMRmethod(toSelectNum, selectMethod)
+
+gnb = GaussianNB()
+
+
 
 
 
