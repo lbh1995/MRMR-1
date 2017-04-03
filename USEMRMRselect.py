@@ -227,11 +227,11 @@ def selectAndTrainSelectOneNB(toSelectNum, selectMethod):
 		scores0.append(score[0])
 		scores1.append(score[1])
 		scores2.append(score[2])
-	outputTest.write("AUC = %s "%scores0)
+	outputTest.write("NBAUC = %s "%scores0)
 	outputTest.write("\n")
-	outputTest.write("MCC = %s "%scores1)
+	outputTest.write("NBMCC = %s "%scores1)
 	outputTest.write("\n")
-	outputTest.write("ACC = %s "%scores2)
+	outputTest.write("NBACC = %s "%scores2)
 	outputTest.write("\n")
 	return 0
 
@@ -255,11 +255,11 @@ def selectAndTrainSelectOneLR(toSelectNum, selectMethod):
 		scores2.append(score[2])
 #		outputTest.write(""
 #		outputTest.write("times = %d, selectMethod = %d, selectedAUC = %f, selectedMCC = %f, selectedACC = %f\n"%(i, selectMethod, score[0], score[1], score[2]))	
-	outputTest.write("AUC = %s "%scores0)
+	outputTest.write("LRAUC = %s "%scores0)
 	outputTest.write("\n")
-	outputTest.write("MCC = %s "%scores1)
+	outputTest.write("LRMCC = %s "%scores1)
 	outputTest.write("\n")
-	outputTest.write("ACC = %s "%scores2)
+	outputTest.write("LRACC = %s "%scores2)
 	outputTest.write("\n")
 	return 0
 
@@ -280,11 +280,11 @@ def selectAndTrainSelectOneRF(toSelectNum, selectMethod):
 		scores0.append(score[0])
 		scores1.append(score[1])
 		scores2.append(score[2])
-	outputTest.write("AUC = %s "%scores0)
+	outputTest.write("RFAUC = %s "%scores0)
 	outputTest.write("\n")
-	outputTest.write("MCC = %s "%scores1)
+	outputTest.write("RFMCC = %s "%scores1)
 	outputTest.write("\n")
-	outputTest.write("ACC = %s "%scores2)
+	outputTest.write("RFACC = %s "%scores2)
 	outputTest.write("\n")
 	return 0
 
